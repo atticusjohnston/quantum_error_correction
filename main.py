@@ -9,15 +9,15 @@ import qiskit
 import importlib.util
 from pathlib import Path
 
-module_path = Path("/Users/atticusjohnston/Documents/uq-coding-assignments/matrixChernoff/code")
+module_path = '/Users/atticusjohnston/Documents/uq-coding-assignments/matrixChernoff/code'
+if module_path not in sys.path:
+    sys.path.insert(0, module_path)
 
 try:
-    spec = importlib.util.spec_from_file_location("applications", module_path)
-    applications = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(applications)
-    make_syndrome_measurements = applications.make_syndrome_measurements
-except Exception as e:
-    logging.critical("Failed to load 'make_syndrome_measurements'. Check module and dependencies.")
+    from applications import make_syndrome_measurements
+except ImportError as e:
+    logging.critical("Failed to import 'make_syndrome_measurements' from 'applications'.")
+    logging.critical("Ensure that the 'code' directory contains a file named `__init__.py` and the `applications.py` module.")
     logging.critical(f"Original error: {e}")
     raise SystemExit(1)
 
@@ -118,7 +118,6 @@ class QuantumErrorCorrection:
         return projector
 
     def build_superoperator(self, tricky=True):
-        logging.info(f"Building superoperator from recovery map. Tricky = {tricky}.")
         superoperator = torch.zeros(self.dim ** 2, self.dim ** 2, dtype=torch.complex128)
         kraus_sum = torch.zeros(self.dim, self.dim, dtype=torch.complex128)
         all_zero_projector = self.compute_syndrome_projector((0, 0))
@@ -262,8 +261,9 @@ def main():
     try:
         qec = QuantumErrorCorrection(n_qubits=3)
 
-        logging.info("Building superoperator from recovery map...")
-        superoperator = qec.build_superoperator()
+        tricky = True
+        logging.info(f"Building superoperator from recovery map. Tricky = {tricky}.")
+        superoperator = qec.build_superoperator(tricky=tricky)
         logging.debug(f"Superoperator shape: {superoperator.shape}")
 
         logging.info("Getting accepted result for comparison...")
