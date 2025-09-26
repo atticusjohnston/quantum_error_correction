@@ -67,30 +67,24 @@ def compare_with_accepted_result(superoperator, code_type='three_qubit'):
 
 
 def main():
-    # Select error correction code type
-    code_type = 'three_qubit'  # Options: 'three_qubit', 'five_qubit', 'surface'
+    code_type = 'three_qubit'
 
-    # Initialize quantum error correction
     if code_type == 'surface':
         qec = QuantumErrorCorrection(code_type=code_type, distance=3)
     else:
         qec = QuantumErrorCorrection(code_type=code_type)
 
-    # Build superoperator
     tricky = True
     logging.info(f"Building superoperator. Tricky = {tricky}")
     superoperator = qec.build_superoperator(tricky=tricky)
 
-    # Compare with mentor's accepted result (only for three_qubit code)
     if code_type == 'three_qubit':
         compare_with_accepted_result(superoperator, code_type)
 
-    # Analyze spectrum
     results = QuantumAnalysis.compute_eigenvalues_and_singular_values(superoperator)
     analysis = QuantumAnalysis.analyze_spectrum(results)
     print_analysis_results(analysis, f"{code_type} Superoperator")
 
-    # Plot results
     plotter = QuantumPlotter()
     plotter.plot_eigenvalues_and_singular_values(
         results,

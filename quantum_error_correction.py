@@ -1,6 +1,7 @@
 import torch
 import logging
 from error_codes import *
+from utils import check_kraus_sum
 
 
 class QuantumErrorCorrection:
@@ -21,8 +22,6 @@ class QuantumErrorCorrection:
         if code_type not in codes:
             raise ValueError(f"Unknown code type: {code_type}")
 
-        if code_type == 'surface':
-            return codes[code_type]()
         return codes[code_type]()
 
     def compute_syndrome_projector(self, syndrome_bits):
@@ -37,9 +36,9 @@ class QuantumErrorCorrection:
         superoperator = torch.zeros(self.dim ** 2, self.dim ** 2, dtype=torch.complex128)
         kraus_sum = torch.zeros(self.dim, self.dim, dtype=torch.complex128)
 
-        # Get syndrome for no errors
-        no_error_syndrome = tuple([0] * len(self.stabilizers))
-        all_zero_projector = self.compute_syndrome_projector(no_error_syndrome)
+        if tricky:
+            no_error_syndrome = tuple([0] * len(self.stabilizers))
+            all_zero_projector = self.compute_syndrome_projector(no_error_syndrome)
 
         for syndrome, recovery in self.recovery_map.items():
             projector_m = self.compute_syndrome_projector(syndrome)
@@ -51,14 +50,5 @@ class QuantumErrorCorrection:
             kraus_sum += combined_op.conj().T @ combined_op
             superoperator += torch.kron(torch.conj(combined_op), combined_op)
 
-        self._check_kraus_sum(kraus_sum)
+        check_kraus_sum(self.dim, kraus_sum)
         return superoperator
-
-    def _check_kraus_sum(self, kraus_sum, tol=1e-6):
-        identity = torch.eye(self.dim, dtype=torch.complex128)
-        if torch.allclose(kraus_sum, identity, atol=tol):
-            logging.info("Kraus sum condition met")
-            return True
-        else:
-            logging.error("Kraus sum condition failed")
-            return False
