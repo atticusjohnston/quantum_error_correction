@@ -1,0 +1,42 @@
+import torch
+from abc import ABC, abstractmethod
+from quantum_states import QuantumStates
+from utils import kron_multiple
+
+
+class ErrorCorrectionCode(ABC):
+    def __init__(self):
+        self.states = QuantumStates()
+        self.n_qubits = None
+        self.stabilizers = []
+        self.recovery_map = {}
+
+    @abstractmethod
+    def create_stabilizers(self):
+        pass
+
+    @abstractmethod
+    def create_recovery_map(self):
+        pass
+
+
+class ThreeQubitBitFlipCode(ErrorCorrectionCode):
+    def __init__(self):
+        super().__init__()
+        self.n_qubits = 3
+        self.stabilizers = self.create_stabilizers()
+        self.recovery_map = self.create_recovery_map()
+
+    def create_stabilizers(self):
+        return [
+            kron_multiple(self.states.identity, self.states.pauli_Z, self.states.pauli_Z),
+            kron_multiple(self.states.pauli_Z, self.states.pauli_Z, self.states.identity)
+        ]
+
+    def create_recovery_map(self):
+        return {
+            (0, 0): kron_multiple(self.states.identity, self.states.identity, self.states.identity),
+            (0, 1): kron_multiple(self.states.pauli_X, self.states.identity, self.states.identity),
+            (1, 0): kron_multiple(self.states.identity, self.states.identity, self.states.pauli_X),
+            (1, 1): kron_multiple(self.states.identity, self.states.pauli_X, self.states.identity)
+        }
