@@ -22,12 +22,6 @@ from quantum_error_correction import QuantumErrorCorrection
 # Three-qubit bit flip code
 qec = QuantumErrorCorrection(code_type='three_qubit')
 
-# Five-qubit code
-qec = QuantumErrorCorrection(code_type='five_qubit')
-
-# Surface code
-qec = QuantumErrorCorrection(code_type='surface', distance=3)
-
 # Build superoperator
 superoperator = qec.build_superoperator(tricky=True)
 ```

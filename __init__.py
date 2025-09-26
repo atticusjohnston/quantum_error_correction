@@ -2,8 +2,6 @@ from .quantum_states import QuantumStates
 from .error_codes import (
     ErrorCorrectionCode,
     ThreeQubitBitFlipCode,
-    FiveQubitCode,
-    SurfaceCode
 )
 from .quantum_error_correction import QuantumErrorCorrection
 from .analysis import QuantumAnalysis
@@ -14,8 +12,6 @@ __all__ = [
     'QuantumStates',
     'ErrorCorrectionCode',
     'ThreeQubitBitFlipCode',
-    'FiveQubitCode',
-    'SurfaceCode',
     'QuantumErrorCorrection',
     'QuantumAnalysis',
     'QuantumPlotter',

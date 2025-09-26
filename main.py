@@ -17,7 +17,6 @@ logging.basicConfig(
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
 logging.getLogger('numba').setLevel(logging.WARNING)
 
-# For importing local applications module
 module_path = '/Users/atticusjohnston/Documents/uq-coding-assignments/matrixChernoff/code'
 if module_path not in sys.path:
     sys.path.insert(0, module_path)
