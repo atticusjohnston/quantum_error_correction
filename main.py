@@ -88,7 +88,7 @@ def main():
     plotter = QuantumPlotter()
     plotter.plot_eigenvalues_and_singular_values(
         results,
-        save_path=f"{code_type}_spectrum.png",
+        save_path=f"outputs/figures/{code_type}_spectrum.png",
         plot_title=f"{code_type.replace('_', ' ').title()} Superoperator Spectrum"
     )
 
