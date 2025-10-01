@@ -4,7 +4,6 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:1
 #SBATCH --partition=a100-test
-#SBATCH --mem=20G
 #SBATCH --time=01:00:00
 #SBATCH --job-name=qec_${CODE}_${TRICKY}
 #SBATCH --output=logs/qec_${CODE}_${TRICKY}_%j.out
