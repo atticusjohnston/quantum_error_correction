@@ -28,28 +28,30 @@ class ErrorCorrectionCode(ABC):
             kron_multiple(*[self.states.pauli_X if j == i else self.states.identity
                             for j in range(self.n_qubits)])
             for i in range(self.n_qubits)
-        ])  # (n_qubits, dim, dim)
+        ])
 
         Z_errors = torch.stack([
             kron_multiple(*[self.states.pauli_Z if j == i else self.states.identity
                             for j in range(self.n_qubits)])
             for i in range(self.n_qubits)
-        ])  # (n_qubits, dim, dim)
+        ])
 
-        stabilizers = torch.stack(self.stabilizers)  # (n_stabs, dim, dim)
+        stabilizers = torch.stack(self.stabilizers)
 
-        # Batch compute all commutators at once
-        def batch_commutators(errors):
-            E = errors.unsqueeze(1)  # (n_qubits, 1, dim, dim)
-            S = stabilizers.unsqueeze(0)  # (1, n_stabs, dim, dim)
+        def compute_commutators(errors):
+            syndromes = []
+            for error in errors:
+                syndrome = []
+                for stab in stabilizers:
+                    ES = torch.matmul(error, stab)
+                    SE = torch.matmul(stab, error)
+                    commutes = (torch.abs(ES - SE).sum() < 1e-7).int().item()
+                    syndrome.append(0 if commutes else 1)
+                syndromes.append(syndrome)
+            return torch.tensor(syndromes, dtype=torch.int)
 
-            ES = torch.matmul(E, S)
-            SE = torch.matmul(S, E)
-
-            return (torch.abs(ES - SE).sum(dim=(-2, -1)) > 1e-7).int()  # (n_qubits, n_stabs)
-
-        X_syndromes = batch_commutators(X_errors)
-        Z_syndromes = batch_commutators(Z_errors)
+        X_syndromes = compute_commutators(X_errors)
+        Z_syndromes = compute_commutators(Z_errors)
 
         for i in range(self.n_qubits):
             syndrome_map[f'X_{i + 1}'] = tuple(X_syndromes[i].cpu().tolist())
