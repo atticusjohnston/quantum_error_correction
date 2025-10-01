@@ -26,3 +26,7 @@ def check_kraus_sum(dim, kraus_sum, tol=1e-6):
     else:
         logging.error("Kraus sum condition failed")
         return False
+
+
+def commutes(A, B):
+    return torch.allclose(A @ B, B @ A)
