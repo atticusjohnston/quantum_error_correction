@@ -4,8 +4,8 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:1
 #SBATCH --partition=a100-test
-#SBATCH --job-name=qec_${CODE}_${TRICKY}
-#SBATCH --output=logs/qec_${CODE}_${TRICKY}_%j.out
+#SBATCH --job-name=qec_%j
+#SBATCH --output=logs/qec_%j.out
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=atticus.johnston@student.uq.edu.au
 
