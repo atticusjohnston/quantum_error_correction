@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     qec = QuantumErrorCorrection(code_type=args.code_type, device=DEVICE)
 
-    print(qec.code.generate_syndromes())
+    # print(qec.code.generate_syndromes())
 
     superoperator = qec.build_superoperator(tricky=args.tricky)
 

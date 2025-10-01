@@ -3,7 +3,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:1
-#SBATCH --partition=a100-test
+#SBATCH --partition=a100
 #SBATCH --job-name=qec_%j
 #SBATCH --output=logs/qec_%j.out
 #SBATCH --mail-type=ALL
