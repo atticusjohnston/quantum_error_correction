@@ -4,7 +4,6 @@
 
 ```
 quantum_error_correction/
-├── __init__.py
 ├── quantum_states.py       # Basic quantum states and Pauli operators
 ├── error_codes.py          # Error correction code implementations
 ├── quantum_error_correction.py  # Main QEC class

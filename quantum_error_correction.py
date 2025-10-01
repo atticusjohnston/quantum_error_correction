@@ -4,25 +4,27 @@ from error_codes import *
 from utils import check_kraus_sum
 
 
+def _initialize_code(code_type, **kwargs):
+    codes = {
+        'three_qubit': ThreeQubitBitFlipCode,
+        'five_qubit_surface': FiveQubitSurfaceCode,
+    }
+
+    if code_type not in codes:
+        raise ValueError(f"Unknown code type: {code_type}")
+
+    return codes[code_type]()
+
+
 class QuantumErrorCorrection:
     def __init__(self, code_type, **kwargs):
         self.code_type = code_type
-        self.code = self._initialize_code(code_type, **kwargs)
+        self.code = _initialize_code(code_type, **kwargs)
         self.n_qubits = self.code.n_qubits
         self.dim = 2 ** self.n_qubits
         self.stabilizers = self.code.stabilizers
         self.recovery_map = self.code.recovery_map
         logging.info(f"Initialized {code_type} error correction code with {self.n_qubits} qubits")
-
-    def _initialize_code(self, code_type, **kwargs):
-        codes = {
-            'three_qubit': ThreeQubitBitFlipCode,
-        }
-
-        if code_type not in codes:
-            raise ValueError(f"Unknown code type: {code_type}")
-
-        return codes[code_type]()
 
     def compute_syndrome_projector(self, syndrome_bits):
         projector = torch.eye(self.dim, dtype=torch.complex128)

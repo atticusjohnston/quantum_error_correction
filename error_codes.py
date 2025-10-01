@@ -47,8 +47,6 @@ class ErrorCorrectionCode(ABC):
         return syndrome_map
 
 
-
-
 class ThreeQubitBitFlipCode(ErrorCorrectionCode):
     def __init__(self):
         super().__init__()
@@ -79,8 +77,15 @@ class FiveQubitSurfaceCode(ErrorCorrectionCode):
 
     def create_stabilizers(self):
         return [
-            kron_multiple(self.states.pauli_X, self.states.pauli_X, self.states.pauli_X, self.states.identity, self.states.identity),
-            kron_multiple(self.states.pauli_Z, self.states.identity, self.states.pauli_Z, self.states.pauli_Z, self.states.identity),
-            kron_multiple(self.states.identity, self.states.pauli_Z, self.states.pauli_Z, self.states.identity, self.states.pauli_Z),
-            kron_multiple(self.states.identity, self.states.identity, self.states.pauli_X, self.states.pauli_X, self.states.pauli_X)
+            kron_multiple(self.states.pauli_X, self.states.pauli_X, self.states.pauli_X, self.states.identity,
+                          self.states.identity),
+            kron_multiple(self.states.pauli_Z, self.states.identity, self.states.pauli_Z, self.states.pauli_Z,
+                          self.states.identity),
+            kron_multiple(self.states.identity, self.states.pauli_Z, self.states.pauli_Z, self.states.identity,
+                          self.states.pauli_Z),
+            kron_multiple(self.states.identity, self.states.identity, self.states.pauli_X, self.states.pauli_X,
+                          self.states.pauli_X)
         ]
+
+    def create_recovery_map(self):
+        return {}

@@ -1,7 +1,6 @@
 import torch
 import logging
 import sys
-from pathlib import Path
 
 from quantum_error_correction import QuantumErrorCorrection
 from analysis import QuantumAnalysis
@@ -67,12 +66,10 @@ def compare_with_accepted_result(superoperator, code_type='three_qubit'):
 
 
 def main():
-    code_type = 'three_qubit'
+    # code_type = 'three_qubit'
+    code_type = 'five_qubit_surface'
 
-    if code_type == 'surface':
-        qec = QuantumErrorCorrection(code_type=code_type, distance=3)
-    else:
-        qec = QuantumErrorCorrection(code_type=code_type)
+    qec = QuantumErrorCorrection(code_type=code_type)
 
     tricky = True
     logging.info(f"Building superoperator. Tricky = {tricky}")

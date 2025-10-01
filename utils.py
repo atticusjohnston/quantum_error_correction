@@ -29,4 +29,4 @@ def check_kraus_sum(dim, kraus_sum, tol=1e-6):
 
 
 def commutes(A, B):
-    return torch.allclose(A @ B, B @ A)
+    return torch.equal(A @ B, B @ A)
