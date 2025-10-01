@@ -1,3 +1,4 @@
+# main.py
 import torch
 import logging
 import sys
@@ -13,11 +14,25 @@ def parse_args():
                         choices=['three_qubit', 'five_qubit_surface', 'thirteen_qubit_surface'])
     parser.add_argument('--tricky', type=lambda x: x.lower() == 'true', default=False)
     parser.add_argument('--device', type=str, default='auto', choices=['auto', 'cuda', 'mps', 'cpu'])
+    parser.add_argument('--log_level', type=str, default='INFO',
+                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
+
+    logging.basicConfig(
+        level=getattr(logging, args.log_level),
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler('qec.log')
+        ]
+    )
+    logging.getLogger('matplotlib').setLevel(logging.WARNING)
+
+    logger = logging.getLogger(__name__)
 
     if args.device == 'auto':
         if torch.mps.is_available():
@@ -29,24 +44,30 @@ if __name__ == "__main__":
     else:
         DEVICE = torch.device(args.device)
 
-    print(f"Using device: {DEVICE}")
+    logger.info(f"Device: {DEVICE}")
+    logger.info(f"Code type: {args.code_type}")
+    logger.info(f"Tricky mode: {args.tricky}")
 
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-    logging.getLogger('matplotlib').setLevel(logging.WARNING)
+    try:
+        qec = QuantumErrorCorrection(code_type=args.code_type, device=DEVICE)
+        logger.info(f"QEC initialized: {qec.n_qubits} qubits, dim={qec.dim}")
 
-    qec = QuantumErrorCorrection(code_type=args.code_type, device=DEVICE)
+        superoperator = qec.build_superoperator(tricky=args.tricky)
+        logger.info(f"Superoperator shape: {superoperator.shape}")
 
-    # print(qec.code.generate_syndromes())
+        results = QuantumAnalysis.compute_eigenvalues_and_singular_values(superoperator)
+        analysis = QuantumAnalysis.analyze_spectrum(results)
 
-    superoperator = qec.build_superoperator(tricky=args.tricky)
+        print(f"\nEigenvalue Magnitudes:")
+        for val, count in zip(analysis['unique_eigenvalue_magnitudes'], analysis['eigenvalue_multiplicities']):
+            print(f"  {val:.3f}: {count}")
 
-    results = QuantumAnalysis.compute_eigenvalues_and_singular_values(superoperator)
-    analysis = QuantumAnalysis.analyze_spectrum(results)
+        print(f"\nSingular Values:")
+        for val, count in zip(analysis['unique_singular_values'], analysis['singular_value_multiplicities']):
+            print(f"  {val:.3f}: {count}")
 
-    print(f"\nEigenvalue Magnitudes:")
-    for val, count in zip(analysis['unique_eigenvalue_magnitudes'], analysis['eigenvalue_multiplicities']):
-        print(f"  {val:.3f}: {count}")
+        logger.info("Computation completed successfully")
 
-    print(f"\nSingular Values:")
-    for val, count in zip(analysis['unique_singular_values'], analysis['singular_value_multiplicities']):
-        print(f"  {val:.3f}: {count}")
+    except Exception as e:
+        logger.exception(f"Fatal error: {e}")
+        sys.exit(1)
