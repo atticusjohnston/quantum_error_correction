@@ -23,27 +23,37 @@ class ErrorCorrectionCode(ABC):
     def generate_syndromes(self):
         syndrome_map = {}
 
+        # Build all error operators
+        X_errors = torch.stack([
+            kron_multiple(*[self.states.pauli_X if j == i else self.states.identity
+                            for j in range(self.n_qubits)])
+            for i in range(self.n_qubits)
+        ])  # (n_qubits, dim, dim)
+
+        Z_errors = torch.stack([
+            kron_multiple(*[self.states.pauli_Z if j == i else self.states.identity
+                            for j in range(self.n_qubits)])
+            for i in range(self.n_qubits)
+        ])  # (n_qubits, dim, dim)
+
+        stabilizers = torch.stack(self.stabilizers)  # (n_stabs, dim, dim)
+
+        # Batch compute all commutators at once
+        def batch_commutators(errors):
+            E = errors.unsqueeze(1)  # (n_qubits, 1, dim, dim)
+            S = stabilizers.unsqueeze(0)  # (1, n_stabs, dim, dim)
+
+            ES = torch.matmul(E, S)
+            SE = torch.matmul(S, E)
+
+            return (torch.abs(ES - SE).sum(dim=(-2, -1)) > 1e-7).int()  # (n_qubits, n_stabs)
+
+        X_syndromes = batch_commutators(X_errors)
+        Z_syndromes = batch_commutators(Z_errors)
+
         for i in range(self.n_qubits):
-            error = [self.states.identity] * self.n_qubits
-            error[i] = self.states.pauli_X
-            error_op = kron_multiple(*error)
-
-            syndrome = tuple(
-                1 if not commutes(error_op, stab) else 0
-                for stab in self.stabilizers
-            )
-            syndrome_map[f'X_{i + 1}'] = syndrome
-
-        for i in range(self.n_qubits):
-            error = [self.states.identity] * self.n_qubits
-            error[i] = self.states.pauli_Z
-            error_op = kron_multiple(*error)
-
-            syndrome = tuple(
-                1 if not commutes(error_op, stab) else 0
-                for stab in self.stabilizers
-            )
-            syndrome_map[f'Z_{i + 1}'] = syndrome
+            syndrome_map[f'X_{i + 1}'] = tuple(X_syndromes[i].cpu().tolist())
+            syndrome_map[f'Z_{i + 1}'] = tuple(Z_syndromes[i].cpu().tolist())
 
         return syndrome_map
 
