@@ -71,12 +71,23 @@ def main():
 
     qec = QuantumErrorCorrection(code_type=code_type)
 
-    tricky = True
+    tricky = False
     logging.info(f"Building superoperator. Tricky = {tricky}")
     superoperator = qec.build_superoperator(tricky=tricky)
 
     if code_type == 'three_qubit':
         compare_with_accepted_result(superoperator, code_type)
+
+    n = qec.n_qubits
+    k = n - len(qec.stabilizers)
+
+    expected_nonzero = 2 ** ((n - k) // 2)
+    mult_nonzero = 4 ** k
+    mult_zero = (4 ** n) - mult_nonzero
+
+    print("\nExpected Singular Value Spectrum:")
+    print(f"  Value: 0, Multiplicity: {mult_zero}")
+    print(f"  Value: {expected_nonzero}, Multiplicity: {mult_nonzero}")
 
     results = QuantumAnalysis.compute_eigenvalues_and_singular_values(superoperator)
     analysis = QuantumAnalysis.analyze_spectrum(results)

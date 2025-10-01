@@ -74,6 +74,7 @@ class FiveQubitSurfaceCode(ErrorCorrectionCode):
         super().__init__()
         self.n_qubits = 5
         self.stabilizers = self.create_stabilizers()
+        self.recovery_map = self.create_recovery_map()
 
     def create_stabilizers(self):
         return [
@@ -88,4 +89,32 @@ class FiveQubitSurfaceCode(ErrorCorrectionCode):
         ]
 
     def create_recovery_map(self):
-        return {}
+        """
+        Syndrome map:
+        {    'X_1': (0, 1, 0, 0),
+             'X_2': (0, 0, 1, 0),
+             'X_3': (0, 1, 1, 0),
+             'X_4': (0, 1, 0, 0),
+             'X_5': (0, 0, 1, 0),
+             'Z_1': (1, 0, 0, 0),
+             'Z_2': (1, 0, 0, 0),
+             'Z_3': (1, 0, 0, 1),
+             'Z_4': (0, 0, 0, 1),
+             'Z_5': (0, 0, 0, 1)    }
+        """
+        return {
+            (0, 0, 0, 0): kron_multiple(self.states.identity, self.states.identity, self.states.identity,
+                                        self.states.identity, self.states.identity),
+            (0, 1, 0, 0): kron_multiple(self.states.pauli_X, self.states.identity, self.states.identity,
+                                        self.states.identity, self.states.identity),
+            (0, 0, 1, 0): kron_multiple(self.states.identity, self.states.pauli_X, self.states.identity,
+                                        self.states.identity, self.states.identity),
+            (0, 1, 1, 0): kron_multiple(self.states.identity, self.states.identity, self.states.pauli_X,
+                                        self.states.identity, self.states.identity),
+            (1, 0, 0, 0): kron_multiple(self.states.pauli_Z, self.states.identity, self.states.identity,
+                                        self.states.identity, self.states.identity),
+            (1, 0, 0, 1): kron_multiple(self.states.identity, self.states.identity, self.states.pauli_Z,
+                                        self.states.identity, self.states.identity),
+            (0, 0, 0, 1): kron_multiple(self.states.identity, self.states.identity, self.states.identity,
+                                        self.states.pauli_Z, self.states.identity),
+        }
