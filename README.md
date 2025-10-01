@@ -26,6 +26,17 @@ source venv/bin/activate
 pip install -r requirements.txt --no-cache-dir
 ```
 
+### HPC Setup (Bunya)
+```bash
+ssh s1234567@bunya.rcc.uq.edu.au
+git clone <repository-url>
+cd quantum_error_correction
+
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt --no-cache-dir
+```
+
 ## Usage
 
 ### Local Execution
