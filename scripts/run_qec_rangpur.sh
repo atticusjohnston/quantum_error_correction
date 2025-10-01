@@ -3,7 +3,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:1
-#SBATCH --partition=vgpu*
+#SBATCH --partition=a100
 #SBATCH --mem=20G
 #SBATCH --time=01:00:00
 #SBATCH --job-name=qec_${CODE}_${TRICKY}
