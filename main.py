@@ -1,10 +1,21 @@
 import torch
 import logging
 import sys
-
 from quantum_error_correction import QuantumErrorCorrection
 from analysis import QuantumAnalysis
 from plotting import QuantumPlotter
+
+if torch.mps.is_available():
+    DEVICE = torch.device("mps")
+    DEVICE_NAME = "Apple Metal Performance Shaders (MPS)"
+elif torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+    DEVICE_NAME = "NVIDIA CUDA (GPU)"
+else:
+    DEVICE = torch.device("cpu")
+    DEVICE_NAME = "CPU"
+
+print(f"Using compute device: {DEVICE_NAME} ({DEVICE})")
 
 # Configure logging
 logging.basicConfig(
@@ -40,7 +51,8 @@ def compare_with_accepted_result(superoperator, code_type='three_qubit'):
         from applications import make_syndrome_measurements
         accepted_result = torch.tensor(
             make_syndrome_measurements(code_type)[0],
-            dtype=torch.complex128
+            dtype=torch.complex64,
+            device=superoperator.device
         )
 
         if torch.allclose(superoperator, accepted_result, atol=1e-6):
@@ -48,15 +60,18 @@ def compare_with_accepted_result(superoperator, code_type='three_qubit'):
             return True
         else:
             diff = superoperator - accepted_result
-            logging.error("Superoperator check FAILED: Does not match mentor's result")
+            logging.error(
+                f"Superoperator check FAILED: Does not match mentor's result on device {superoperator.device}")
 
             # Log top differences
             k = 5
             flat_diff = diff.abs().view(-1)
             topk_vals, topk_idx = torch.topk(flat_diff, min(k, len(flat_diff)))
-            indices = [divmod(i.item(), diff.shape[1]) for i in topk_idx]
 
-            for (row, col), val in zip(indices, topk_vals):
+            indices = [divmod(i.item(), diff.shape[1]) for i in topk_idx.cpu()]
+            topk_vals_cpu = topk_vals.cpu()
+
+            for (row, col), val in zip(indices, topk_vals_cpu):
                 logging.debug(f"Diff at ({row}, {col}): {val:.6f}")
             return False
 
@@ -66,14 +81,17 @@ def compare_with_accepted_result(superoperator, code_type='three_qubit'):
 
 
 def main():
-    # code_type = 'three_qubit'
-    code_type = 'five_qubit_surface'
+    code_type = 'three_qubit'
+    # code_type = 'five_qubit_surface'
+    # code_type = 'thirteen_qubit_surface'
 
-    qec = QuantumErrorCorrection(code_type=code_type)
+    qec = QuantumErrorCorrection(code_type=code_type, device=DEVICE)
 
     tricky = False
     logging.info(f"Building superoperator. Tricky = {tricky}")
     superoperator = qec.build_superoperator(tricky=tricky)
+
+    logging.info(f"Superoperator built on device: {superoperator.device}")
 
     if code_type == 'three_qubit':
         compare_with_accepted_result(superoperator, code_type)

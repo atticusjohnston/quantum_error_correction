@@ -6,15 +6,15 @@ from utils import unique_floats_summed
 class QuantumAnalysis:
     @staticmethod
     def compute_eigenvalues_and_singular_values(matrix):
-        eigenvalues = torch.linalg.eigvals(matrix)
-        singular_values = torch.linalg.svdvals(matrix)
+        eigenvalues = torch.linalg.eigvals(matrix.cpu())
+        singular_values = torch.linalg.svdvals(matrix.cpu())
 
         return {
-            'eigenvalues': eigenvalues,
-            'eigenvalues_real': eigenvalues.real.numpy(),
-            'eigenvalues_imag': eigenvalues.imag.numpy(),
-            'eigenvalues_magnitude': torch.abs(eigenvalues).numpy(),
-            'singular_values': singular_values.numpy()
+            'eigenvalues': eigenvalues.cpu(),
+            'eigenvalues_real': eigenvalues.real.cpu().numpy(),
+            'eigenvalues_imag': eigenvalues.imag.cpu().numpy(),
+            'eigenvalues_magnitude': torch.abs(eigenvalues).cpu().numpy(),
+            'singular_values': singular_values.cpu().numpy()
         }
 
     @staticmethod

@@ -5,8 +5,9 @@ from utils import kron_multiple, commutes
 
 
 class ErrorCorrectionCode(ABC):
-    def __init__(self):
-        self.states = QuantumStates()
+    def __init__(self, device='cpu'):
+        self.device = device
+        self.states = QuantumStates(device=self.device)
         self.n_qubits = None
         self.stabilizers = []
         self.recovery_map = {}
@@ -48,8 +49,8 @@ class ErrorCorrectionCode(ABC):
 
 
 class ThreeQubitBitFlipCode(ErrorCorrectionCode):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, device='cpu'):
+        super().__init__(device=device)
         self.n_qubits = 3
         self.stabilizers = self.create_stabilizers()
         self.recovery_map = self.create_recovery_map()
@@ -70,8 +71,8 @@ class ThreeQubitBitFlipCode(ErrorCorrectionCode):
 
 
 class FiveQubitSurfaceCode(ErrorCorrectionCode):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, device='cpu'):
+        super().__init__(device=device)
         self.n_qubits = 5
         self.stabilizers = self.create_stabilizers()
         self.recovery_map = self.create_recovery_map()
@@ -90,7 +91,7 @@ class FiveQubitSurfaceCode(ErrorCorrectionCode):
 
     def create_recovery_map(self):
         """
-        Syndrome map:
+        Error-Syndrome map:
         {    'X_1': (0, 1, 0, 0),
              'X_2': (0, 0, 1, 0),
              'X_3': (0, 1, 1, 0),
@@ -118,3 +119,79 @@ class FiveQubitSurfaceCode(ErrorCorrectionCode):
             (0, 0, 0, 1): kron_multiple(self.states.identity, self.states.identity, self.states.identity,
                                         self.states.pauli_Z, self.states.identity),
         }
+
+
+class ThirteenQubitSurfaceCode(ErrorCorrectionCode):
+    def __init__(self, device='cpu'):
+        super().__init__(device=device)
+        self.n_qubits = 13
+        self.stabilizers = self.create_stabilizers()
+        # self.recovery_map = self.create_recovery_map()
+
+    def create_stabilizers(self):
+        return [
+            kron_multiple(self.states.pauli_X, self.states.pauli_X, self.states.identity, self.states.pauli_X,
+                          self.states.identity, self.states.identity, self.states.identity, self.states.identity,
+                          self.states.identity, self.states.identity, self.states.identity, self.states.identity,
+                          self.states.identity),
+            kron_multiple(self.states.identity, self.states.pauli_X, self.states.pauli_X, self.states.identity,
+                          self.states.pauli_X, self.states.identity, self.states.identity, self.states.identity,
+                          self.states.identity, self.states.identity, self.states.identity, self.states.identity,
+                          self.states.identity),
+            kron_multiple(self.states.pauli_Z, self.states.identity, self.states.identity, self.states.pauli_Z,
+                          self.states.identity, self.states.pauli_Z, self.states.identity, self.states.identity,
+                          self.states.identity, self.states.identity, self.states.identity, self.states.identity,
+                          self.states.identity),
+            kron_multiple(self.states.identity, self.states.pauli_Z, self.states.identity, self.states.pauli_Z,
+                          self.states.pauli_Z, self.states.identity, self.states.pauli_Z, self.states.identity,
+                          self.states.identity, self.states.identity, self.states.identity, self.states.identity,
+                          self.states.identity),
+            kron_multiple(self.states.identity, self.states.identity, self.states.pauli_Z, self.states.identity,
+                          self.states.pauli_Z, self.states.identity, self.states.identity, self.states.pauli_Z,
+                          self.states.identity, self.states.identity, self.states.identity, self.states.identity,
+                          self.states.identity),
+            kron_multiple(self.states.identity, self.states.identity, self.states.identity, self.states.pauli_X,
+                          self.states.identity, self.states.pauli_X, self.states.pauli_X, self.states.identity,
+                          self.states.pauli_X, self.states.identity, self.states.identity, self.states.identity,
+                          self.states.identity),
+            kron_multiple(self.states.identity, self.states.identity, self.states.identity, self.states.identity,
+                          self.states.pauli_X, self.states.identity, self.states.pauli_X, self.states.pauli_X,
+                          self.states.identity, self.states.pauli_X, self.states.identity, self.states.identity,
+                          self.states.identity),
+            kron_multiple(self.states.identity, self.states.identity, self.states.identity, self.states.identity,
+                          self.states.identity, self.states.pauli_Z, self.states.identity, self.states.identity,
+                          self.states.pauli_Z, self.states.identity, self.states.pauli_Z, self.states.identity,
+                          self.states.identity),
+            kron_multiple(self.states.identity, self.states.identity, self.states.identity, self.states.identity,
+                          self.states.identity, self.states.identity, self.states.pauli_Z, self.states.identity,
+                          self.states.pauli_Z, self.states.pauli_Z, self.states.identity, self.states.pauli_Z,
+                          self.states.identity),
+            kron_multiple(self.states.identity, self.states.identity, self.states.identity, self.states.identity,
+                          self.states.identity, self.states.identity, self.states.identity, self.states.pauli_Z,
+                          self.states.identity, self.states.pauli_Z, self.states.identity, self.states.identity,
+                          self.states.pauli_Z),
+            kron_multiple(self.states.identity, self.states.identity, self.states.identity, self.states.identity,
+                          self.states.identity, self.states.identity, self.states.identity, self.states.identity,
+                          self.states.pauli_X, self.states.identity, self.states.pauli_X, self.states.pauli_X,
+                          self.states.identity),
+            kron_multiple(self.states.identity, self.states.identity, self.states.identity, self.states.identity,
+                          self.states.identity, self.states.identity, self.states.identity, self.states.identity,
+                          self.states.identity, self.states.pauli_X, self.states.identity, self.states.pauli_X,
+                          self.states.pauli_X)
+        ]
+
+    def create_recovery_map(self):
+        """
+        Error-Syndrome map:
+        {    'X_1': (0, 1, 0, 0),
+             'X_2': (0, 0, 1, 0),
+             'X_3': (0, 1, 1, 0),
+             'X_4': (0, 1, 0, 0),
+             'X_5': (0, 0, 1, 0),
+             'Z_1': (1, 0, 0, 0),
+             'Z_2': (1, 0, 0, 0),
+             'Z_3': (1, 0, 0, 1),
+             'Z_4': (0, 0, 0, 1),
+             'Z_5': (0, 0, 0, 1)    }
+        """
+        pass

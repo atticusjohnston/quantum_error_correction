@@ -4,39 +4,42 @@ from error_codes import *
 from utils import check_kraus_sum
 
 
-def _initialize_code(code_type, **kwargs):
+def _initialize_code(code_type, device, **kwargs):
     codes = {
         'three_qubit': ThreeQubitBitFlipCode,
         'five_qubit_surface': FiveQubitSurfaceCode,
+        'thirteen_qubit_surface': ThirteenQubitSurfaceCode,
     }
 
     if code_type not in codes:
         raise ValueError(f"Unknown code type: {code_type}")
 
-    return codes[code_type]()
+    return codes[code_type](device=device)
 
 
 class QuantumErrorCorrection:
-    def __init__(self, code_type, **kwargs):
+    def __init__(self, code_type, device='cpu', **kwargs):
+        self.device = device
         self.code_type = code_type
-        self.code = _initialize_code(code_type, **kwargs)
+        self.code = _initialize_code(code_type, device=self.device, **kwargs)
         self.n_qubits = self.code.n_qubits
         self.dim = 2 ** self.n_qubits
         self.stabilizers = self.code.stabilizers
         self.recovery_map = self.code.recovery_map
-        logging.info(f"Initialized {code_type} error correction code with {self.n_qubits} qubits")
+        logging.info(f"Initialized {code_type} error correction code on device {self.device} with {self.n_qubits} qubits")
 
     def compute_syndrome_projector(self, syndrome_bits):
-        projector = torch.eye(self.dim, dtype=torch.complex128)
+        projector = torch.eye(self.dim, dtype=torch.complex64, device=self.device)
         for i, bit in enumerate(syndrome_bits):
-            factor = 0.5 * (torch.eye(self.dim, dtype=torch.complex128) +
+            factor = 0.5 * (torch.eye(self.dim, dtype=torch.complex64, device=self.device) +
                             ((-1) ** bit) * self.stabilizers[i])
             projector = projector @ factor
         return projector
 
     def build_superoperator(self, tricky=True):
-        superoperator = torch.zeros(self.dim ** 2, self.dim ** 2, dtype=torch.complex128)
-        kraus_sum = torch.zeros(self.dim, self.dim, dtype=torch.complex128)
+        dim_sq = self.dim ** 2
+        superoperator = torch.zeros(dim_sq, dim_sq, dtype=torch.complex64, device=self.device)
+        kraus_sum = torch.zeros(self.dim, self.dim, dtype=torch.complex64, device=self.device)
 
         if tricky:
             no_error_syndrome = tuple([0] * len(self.stabilizers))
