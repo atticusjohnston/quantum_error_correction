@@ -4,9 +4,10 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:1
 #SBATCH --partition=a100-test
-#SBATCH --time=01:00:00
 #SBATCH --job-name=qec_${CODE}_${TRICKY}
 #SBATCH --output=logs/qec_${CODE}_${TRICKY}_%j.out
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=atticus.johnston@student.uq.edu.au
 
 source venv/bin/activate
 python main.py --code_type ${CODE} --tricky ${TRICKY}
