@@ -42,13 +42,12 @@ class QuantumErrorCorrection:
             factor = 0.5 * (torch.eye(self.dim, dtype=torch.complex64, device=self.device) +
                             ((-1) ** bit) * self.stabilizers[i])
             projector = projector @ factor
-        logger.debug(f"Projector computed: shape={projector.shape}, norm={torch.norm(projector):.6f}")
+        logger.debug(f"Projector computed: shape={projector.shape}")
         return projector
 
     def build_superoperator(self, tricky=True):
         logger.info(f"Building superoperator (tricky={tricky})")
-        dim_sq = self.dim ** 2
-        superoperator = torch.zeros(dim_sq, dim_sq, dtype=torch.complex64, device=self.device)
+        superoperator = torch.zeros(self.dim ** 2, self.dim ** 2, dtype=torch.complex64, device=self.device)
         kraus_sum = torch.zeros(self.dim, self.dim, dtype=torch.complex64, device=self.device)
 
         if tricky:
@@ -67,7 +66,6 @@ class QuantumErrorCorrection:
 
             kraus_sum += combined_op.conj().T @ combined_op
             superoperator += torch.kron(torch.conj(combined_op), combined_op)
-            logger.debug(f"Syndrome {syndrome}: combined_op norm={torch.norm(combined_op):.6f}")
 
         logger.info(f"Superoperator built: shape={superoperator.shape}")
         check_kraus_sum(self.dim, kraus_sum)

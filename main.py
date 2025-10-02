@@ -55,6 +55,17 @@ if __name__ == "__main__":
         superoperator = qec.build_superoperator(tricky=args.tricky)
         logger.info(f"Superoperator shape: {superoperator.shape}")
 
+        n = qec.n_qubits
+        k = n - len(qec.stabilizers)
+
+        expected_nonzero = 2 ** ((n - k) // 2)
+        mult_nonzero = 4 ** k
+        mult_zero = (4 ** n) - mult_nonzero
+
+        print("\nExpected Singular Value Spectrum:")
+        print(f"  0: {mult_zero}")
+        print(f"  {expected_nonzero}: {mult_nonzero}\n")
+
         results = QuantumAnalysis.compute_eigenvalues_and_singular_values(superoperator)
         analysis = QuantumAnalysis.analyze_spectrum(results)
 
