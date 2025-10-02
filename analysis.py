@@ -80,6 +80,15 @@ class QuantumAnalysis:
             logger.error(f"Failed to compute singular values: {e}")
             raise
 
+        computed_frobenius_sq = np.sum(singular_values ** 2)
+        actual_frobenius_sq = spla.norm(matrix, 'fro') ** 2
+
+        if np.allclose(computed_frobenius_sq, actual_frobenius_sq):
+            num_missing = min(matrix.shape) - len(singular_values)
+            if num_missing > 0:
+                singular_values = np.concatenate([singular_values, np.zeros(num_missing)])
+                logger.info(f"Added {num_missing} zero singular values to match matrix size")
+
         return {
             'eigenvalues': eigenvalues,
             'eigenvalues_real': eigenvalues.real if len(eigenvalues) > 0 else np.array([]),
