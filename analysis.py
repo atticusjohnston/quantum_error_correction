@@ -50,19 +50,29 @@ class QuantumAnalysis:
     def _compute_sparse(matrix):
         logger.info(f"Computing eigenvalues and singular values for sparse matrix: {matrix.shape}, nnz={matrix.nnz}")
 
-        k = min(100, matrix.shape[0] - 2)
+        k = min(matrix.shape) - 2
+        eigenvalues = np.array([])
+
+        if matrix.shape[0] == matrix.shape[1]:
+            try:
+                eigenvalues, _ = spla.eigs(matrix, k=k, which='LM')
+                logger.info(f"Eigenvalues computed: {len(eigenvalues)} values")
+                logger.debug(f"Eigenvalue range: [{np.abs(eigenvalues).min():.6f}, {np.abs(eigenvalues).max():.6f}]")
+            except Exception as e:
+                logger.error(f"Failed to compute eigenvalues: {e}")
+                raise
+
+            computed_trace = np.sum(eigenvalues)
+            actual_trace = matrix.diagonal().sum()
+
+            if np.allclose(computed_trace, actual_trace):
+                num_missing = matrix.shape[0] - len(eigenvalues)
+                if num_missing > 0:
+                    eigenvalues = np.concatenate([eigenvalues, np.zeros(num_missing)])
+                    logger.info(f"Added {num_missing} zero eigenvalues to match matrix size")
 
         try:
-            eigenvalues, _ = spla.eigs(matrix, k=k, which='LM')
-            logger.info(f"Eigenvalues computed: {len(eigenvalues)} values")
-            logger.debug(f"Eigenvalue range: [{np.abs(eigenvalues).min():.6f}, {np.abs(eigenvalues).max():.6f}]")
-        except Exception as e:
-            logger.error(f"Failed to compute eigenvalues: {e}")
-            raise
-
-        try:
-            sv_squared, _ = spla.eigs(matrix @ matrix.conj().T, k=k, which='LM')
-            singular_values = np.sqrt(np.abs(sv_squared.real))
+            singular_values = spla.svds(matrix, k=k, which='LM', return_singular_vectors=False)
             singular_values = np.sort(singular_values)[::-1]
             logger.info(f"Singular values computed: {len(singular_values)} values")
             logger.debug(f"Singular value range: [{singular_values.min():.6f}, {singular_values.max():.6f}]")
@@ -72,9 +82,9 @@ class QuantumAnalysis:
 
         return {
             'eigenvalues': eigenvalues,
-            'eigenvalues_real': eigenvalues.real,
-            'eigenvalues_imag': eigenvalues.imag,
-            'eigenvalues_magnitude': np.abs(eigenvalues),
+            'eigenvalues_real': eigenvalues.real if len(eigenvalues) > 0 else np.array([]),
+            'eigenvalues_imag': eigenvalues.imag if len(eigenvalues) > 0 else np.array([]),
+            'eigenvalues_magnitude': np.abs(eigenvalues) if len(eigenvalues) > 0 else np.array([]),
             'singular_values': singular_values
         }
 

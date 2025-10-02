@@ -55,12 +55,6 @@ if __name__ == "__main__":
         qec = QuantumErrorCorrection(code_type=args.code_type, device=DEVICE)
         logger.info(f"QEC initialized: {qec.n_qubits} qubits, dim={qec.dim}")
 
-        superoperator = qec.build_superoperator(tricky=args.tricky, sparse=args.sparse)
-        if args.sparse:
-            logger.info(f"Superoperator shape: {superoperator.shape}, nnz={superoperator.nnz}")
-        else:
-            logger.info(f"Superoperator shape: {superoperator.shape}")
-
         n = qec.n_qubits
         k = n - len(qec.stabilizers)
 
@@ -68,9 +62,19 @@ if __name__ == "__main__":
         mult_nonzero = 4 ** k
         mult_zero = (4 ** n) - mult_nonzero
 
+        print("\nExpected Eigenvalue Spectrum:")
+        print(f"  0: {mult_zero}")
+        print(f"  1: {mult_nonzero}")
+
         print("\nExpected Singular Value Spectrum:")
         print(f"  0: {mult_zero}")
         print(f"  {expected_nonzero}: {mult_nonzero}\n")
+
+        superoperator = qec.build_superoperator(tricky=args.tricky, sparse=args.sparse)
+        if args.sparse:
+            logger.info(f"Superoperator shape: {superoperator.shape}, nnz={superoperator.nnz}")
+        else:
+            logger.info(f"Superoperator shape: {superoperator.shape}")
 
         results = QuantumAnalysis.compute_eigenvalues_and_singular_values(superoperator, sparse=args.sparse)
         analysis = QuantumAnalysis.analyze_spectrum(results)
