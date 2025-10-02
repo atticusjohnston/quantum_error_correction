@@ -13,6 +13,7 @@ def parse_args():
     parser.add_argument('--code_type', type=str, default='three_qubit',
                         choices=['three_qubit', 'five_qubit_surface', 'thirteen_qubit_surface'])
     parser.add_argument('--tricky', type=lambda x: x.lower() == 'true', default=False)
+    parser.add_argument('--sparse', action='store_true', default=False)
     parser.add_argument('--device', type=str, default='auto', choices=['auto', 'cuda', 'mps', 'cpu'])
     parser.add_argument('--log_level', type=str, default='INFO',
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])
@@ -44,16 +45,21 @@ if __name__ == "__main__":
     else:
         DEVICE = torch.device(args.device)
 
+    logger.info(f"********** NEW COMPUTATION **********")
     logger.info(f"Device: {DEVICE}")
     logger.info(f"Code type: {args.code_type}")
     logger.info(f"Tricky mode: {args.tricky}")
+    logger.info(f"Sparse mode: {args.sparse}")
 
     try:
         qec = QuantumErrorCorrection(code_type=args.code_type, device=DEVICE)
         logger.info(f"QEC initialized: {qec.n_qubits} qubits, dim={qec.dim}")
 
-        superoperator = qec.build_superoperator(tricky=args.tricky)
-        logger.info(f"Superoperator shape: {superoperator.shape}")
+        superoperator = qec.build_superoperator(tricky=args.tricky, sparse=args.sparse)
+        if args.sparse:
+            logger.info(f"Superoperator shape: {superoperator.shape}, nnz={superoperator.nnz}")
+        else:
+            logger.info(f"Superoperator shape: {superoperator.shape}")
 
         n = qec.n_qubits
         k = n - len(qec.stabilizers)
@@ -66,7 +72,7 @@ if __name__ == "__main__":
         print(f"  0: {mult_zero}")
         print(f"  {expected_nonzero}: {mult_nonzero}\n")
 
-        results = QuantumAnalysis.compute_eigenvalues_and_singular_values(superoperator)
+        results = QuantumAnalysis.compute_eigenvalues_and_singular_values(superoperator, sparse=args.sparse)
         analysis = QuantumAnalysis.analyze_spectrum(results)
 
         print(f"\nEigenvalue Magnitudes:")
@@ -76,8 +82,9 @@ if __name__ == "__main__":
         print(f"\nSingular Values:")
         for val, count in zip(analysis['unique_singular_values'], analysis['singular_value_multiplicities']):
             print(f"  {val:.3f}: {count}")
+        print("")
 
-        logger.info("Computation completed successfully")
+        logger.info("********** COMPUTATION COMPLETED SUCCESSFULLY **********")
 
     except Exception as e:
         logger.exception(f"Fatal error: {e}")
