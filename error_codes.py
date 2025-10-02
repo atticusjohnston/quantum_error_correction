@@ -145,7 +145,8 @@ class ThirteenQubitSurfaceCode(ErrorCorrectionCode):
         self.n_qubits = 13
         logger.info("Initializing ThirteenQubitSurfaceCode")
         self.stabilizers = self.create_stabilizers()
-        logger.info(f"ThirteenQubitSurfaceCode ready: {len(self.stabilizers)} stabilizers")
+        self.recovery_map = self.create_recovery_map()
+        logger.info(f"ThirteenQubitSurfaceCode ready: {len(self.stabilizers)} stabilizers, {len(self.recovery_map)} recovery ops")
 
     def create_stabilizers(self):
         logger.debug("Creating stabilizers for 13-qubit surface code")
