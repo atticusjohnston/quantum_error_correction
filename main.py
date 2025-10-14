@@ -6,6 +6,7 @@ import argparse
 from quantum_error_correction import QuantumErrorCorrection
 from analysis import QuantumAnalysis
 from plotting import QuantumPlotter
+import pprint
 
 
 def parse_args():

@@ -4,6 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from quantum_states import QuantumStates
 from utils import kron_multiple, commutes
+from itertools import combinations
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,38 @@ class ErrorCorrectionCode(ABC):
             for i in range(self.n_qubits)
         ])
 
+        logger.debug(f"Building {self.n_qubits} Y error operators")
+        Y_errors = torch.stack([
+            kron_multiple(*[self.states.pauli_Y if j == i else self.states.identity
+                            for j in range(self.n_qubits)])
+            for i in range(self.n_qubits)
+        ])
+
+        logger.debug(f"Building 2-qubit error operators")
+        two_qubit_errors = []
+        paulis = {
+            "X": self.states.pauli_X,
+            "Y": self.states.pauli_Y,
+            "Z": self.states.pauli_Z,
+        }
+
+        for i in range(self.n_qubits):
+            for j in range(i + 1, self.n_qubits):
+                for p1_label, p1 in paulis.items():
+                    for p2_label, p2 in paulis.items():
+                        label = f"{p1_label}{i + 1}_{p2_label}{j + 1}"
+                        op = kron_multiple(*[
+                            (p1 if k == i else (p2 if k == j else self.states.identity))
+                            for k in range(self.n_qubits)
+                        ])
+                        two_qubit_errors.append((label, op))
+
+        # separate labels and operators
+        multi_labels, multi_ops = zip(*two_qubit_errors)
+        multi_errors = torch.stack(multi_ops)
+
+        print(multi_errors)
+
         stabilizers = torch.stack(self.stabilizers)
         logger.debug(f"Stabilizers tensor: shape={stabilizers.shape}")
 
@@ -62,10 +95,17 @@ class ErrorCorrectionCode(ABC):
         X_syndromes = compute_commutators(X_errors)
         logger.debug("Computing Z error syndromes")
         Z_syndromes = compute_commutators(Z_errors)
+        logger.debug("Computing Y error syndromes")
+        Y_syndromes = compute_commutators(Y_errors)
 
         for i in range(self.n_qubits):
             syndrome_map[f'X_{i + 1}'] = tuple(X_syndromes[i].cpu().tolist())
             syndrome_map[f'Z_{i + 1}'] = tuple(Z_syndromes[i].cpu().tolist())
+            syndrome_map[f'Y_{i + 1}'] = tuple(Y_syndromes[i].cpu().tolist())
+
+        multi_syndromes = compute_commutators(multi_errors)
+        for idx, syndrome in enumerate(multi_syndromes):
+            syndrome_map[multi_labels[idx]] = tuple(syndrome.cpu().tolist())
 
         logger.info(f"Generated {len(syndrome_map)} syndrome mappings")
         return syndrome_map
@@ -78,7 +118,8 @@ class ThreeQubitBitFlipCode(ErrorCorrectionCode):
         logger.info("Initializing ThreeQubitBitFlipCode")
         self.stabilizers = self.create_stabilizers()
         self.recovery_map = self.create_recovery_map()
-        logger.info(f"ThreeQubitBitFlipCode ready: {len(self.stabilizers)} stabilizers, {len(self.recovery_map)} recovery ops")
+        logger.info(
+            f"ThreeQubitBitFlipCode ready: {len(self.stabilizers)} stabilizers, {len(self.recovery_map)} recovery ops")
 
     def create_stabilizers(self):
         logger.debug("Creating stabilizers for 3-qubit code")
@@ -104,7 +145,8 @@ class FiveQubitSurfaceCode(ErrorCorrectionCode):
         logger.info("Initializing FiveQubitSurfaceCode")
         self.stabilizers = self.create_stabilizers()
         self.recovery_map = self.create_recovery_map()
-        logger.info(f"FiveQubitSurfaceCode ready: {len(self.stabilizers)} stabilizers, {len(self.recovery_map)} recovery ops")
+        logger.info(
+            f"FiveQubitSurfaceCode ready: {len(self.stabilizers)} stabilizers, {len(self.recovery_map)} recovery ops")
 
     def create_stabilizers(self):
         logger.debug("Creating stabilizers for 5-qubit surface code")
@@ -121,21 +163,28 @@ class FiveQubitSurfaceCode(ErrorCorrectionCode):
 
     def create_recovery_map(self):
         logger.debug("Creating recovery map for 5-qubit surface code")
+        I = self.states.identity
+        X = self.states.pauli_X
+        Y = self.states.pauli_Y
+        Z = self.states.pauli_Z
+
         return {
-            (0, 0, 0, 0): kron_multiple(self.states.identity, self.states.identity, self.states.identity,
-                                        self.states.identity, self.states.identity),
-            (0, 1, 0, 0): kron_multiple(self.states.pauli_X, self.states.identity, self.states.identity,
-                                        self.states.identity, self.states.identity),
-            (0, 0, 1, 0): kron_multiple(self.states.identity, self.states.pauli_X, self.states.identity,
-                                        self.states.identity, self.states.identity),
-            (0, 1, 1, 0): kron_multiple(self.states.identity, self.states.identity, self.states.pauli_X,
-                                        self.states.identity, self.states.identity),
-            (1, 0, 0, 0): kron_multiple(self.states.pauli_Z, self.states.identity, self.states.identity,
-                                        self.states.identity, self.states.identity),
-            (1, 0, 0, 1): kron_multiple(self.states.identity, self.states.identity, self.states.pauli_Z,
-                                        self.states.identity, self.states.identity),
-            (0, 0, 0, 1): kron_multiple(self.states.identity, self.states.identity, self.states.identity,
-                                        self.states.pauli_Z, self.states.identity),
+            (0, 0, 0, 0): kron_multiple(I, I, I, I, I),
+            (0, 1, 0, 0): kron_multiple(X, I, I, I, I),
+            (0, 0, 1, 0): kron_multiple(I, X, I, I, I),
+            (0, 1, 1, 0): kron_multiple(I, I, X, I, I),
+            (1, 0, 0, 0): kron_multiple(Z, I, I, I, I),
+            (1, 0, 0, 1): kron_multiple(I, I, Z, I, I),
+            (0, 0, 0, 1): kron_multiple(I, I, I, Z, I),
+            (1, 1, 0, 0): kron_multiple(Y, I, I, I, I),
+            (1, 0, 1, 0): kron_multiple(I, Y, I, I, I),
+            (1, 1, 1, 1): kron_multiple(I, I, Y, I, I),
+            (0, 1, 0, 1): kron_multiple(I, I, I, Y, I),
+            (0, 0, 1, 1): kron_multiple(I, I, I, I, Y),
+            (1, 0, 1, 1): kron_multiple(X, I, Y, I, I),
+            (1, 1, 0, 1): kron_multiple(X, I, Z, I, I),
+            (0, 1, 1, 1): kron_multiple(X, I, I, I, Y),
+            (1, 1, 1, 0): kron_multiple(X, Y, I, I, I),
         }
 
 
@@ -146,7 +195,8 @@ class ThirteenQubitSurfaceCode(ErrorCorrectionCode):
         logger.info("Initializing ThirteenQubitSurfaceCode")
         self.stabilizers = self.create_stabilizers()
         self.recovery_map = self.create_recovery_map()
-        logger.info(f"ThirteenQubitSurfaceCode ready: {len(self.stabilizers)} stabilizers, {len(self.recovery_map)} recovery ops")
+        logger.info(
+            f"ThirteenQubitSurfaceCode ready: {len(self.stabilizers)} stabilizers, {len(self.recovery_map)} recovery ops")
 
     def create_stabilizers(self):
         logger.debug("Creating stabilizers for 13-qubit surface code")
